@@ -184,3 +184,9 @@ while player_hits < total_ship_hp and ai_hits < total_ship_hp:
     if ai_hits >= total_ship_hp:
         print("you lose")
         break
+
+with open("file.txt", "w", encoding="utf-8") as f:
+    if player_hits >= total_ship_hp:
+        f.write(f'Player won with {player_hits} hits and {player_shots_fired} total shots')
+    elif ai_hits >= total_ship_hp:
+        f.write(f'AI won with {ai_hits} hits and {ai_shots_fired} total shots')
