@@ -4,7 +4,7 @@ class Board:
     def __init__(self, size):
         self._size = size
         self._board = [['~'] * size for _ in range(size)]
-        self._ship_map = {}  # (row, col) -> Ship
+        self._ship_map = {}  # (row, col) to Ship
 
     @property
     def size(self):
@@ -54,7 +54,7 @@ class Board:
         return True
 
     def _mark_adjacent_sunk(self, ship):
-        """After a ship sinks, mark all empty neighbours as misses."""
+        #After a ship sinks, mark all empty neighbours as misses
         for r, c in ship.cells:
             for dr in (-1, 0, 1):
                 for dc in (-1, 0, 1):
@@ -129,17 +129,40 @@ class Ship:
 
     def hit(self):
         self._hits += 1
-    
+
+class Fleet:
+    def __init__(self, sizes):
+        self._ships = [Ship(s) for s in sizes]
+
+    @property
+    def ships(self):
+        return self._ships
+
+    @property
+    def total_hp(self):
+        return sum(s.size for s in self._ships)
+
+    @property
+    def all_sunk(self):
+        return all(s.is_sunk for s in self._ships)
+
+class Game:
+    def __init__(self, player_board, ai_board, player_fleet, ai_fleet):
+        self.player_board = player_board   # Boards exist outside Game — aggregation
+        self.ai_board     = ai_board
+        self.player_fleet = player_fleet   # Fleets exist outside Game — aggregation
+        self.ai_fleet     = ai_fleet
+
 #----GAME SETUP----
 
 SHIP_SIZES = [5, 4, 3, 2, 2]
 
-#Each board gets its own independent ship objects
-player_ships = [Ship(s) for s in SHIP_SIZES]
-ai_ships     = [Ship(s) for s in SHIP_SIZES]
-
+# Each fleet composes its own independent Ship objects
+player_fleet = Fleet(SHIP_SIZES)
+ai_fleet     = Fleet(SHIP_SIZES)
 player_board = Board(10)
-ai_board = AIBoard(10)
+ai_board     = AIBoard(10)
+game = Game(player_board, ai_board, player_fleet, ai_fleet)
 
 for i in range(5): #Player ship placement
     while True:
@@ -158,7 +181,7 @@ for i in range(5): #Player ship placement
                 print("Invalid orientation")
             else:
                 break
-        if player_board.place_ship(player_ships[i], coords, orient) == True:
+        if player_board.place_ship(game.player_fleet.ships[i], coords, orient) == True:
             player_board.display()
             break
         else:
@@ -169,7 +192,7 @@ ai_board.display()
 
 for i in range(5): #AI ship placement(random)
     while True:
-       if ai_board.place_ship_random(ai_ships[i]):
+       if ai_board.place_ship_random(game.ai_fleet.ships[i]):
             break
        
 print("Shooting phase")
@@ -177,9 +200,8 @@ player_shots_fired = 0
 player_hits = 0
 ai_shots_fired = 0
 ai_hits = 0
-total_ship_hp = sum(s for s in SHIP_SIZES)
 
-while player_hits < total_ship_hp and ai_hits < total_ship_hp:
+while not game.player_fleet.all_sunk and not game.ai_fleet.all_sunk:
     print("Player turn")
     player_turn = True
     while player_turn:
@@ -214,7 +236,7 @@ while player_hits < total_ship_hp and ai_hits < total_ship_hp:
         elif result == "alr_shot":
             print("ALREADY SHOT THERE")
 
-    if player_hits >= total_ship_hp:
+    if game.ai_fleet.all_sunk:
         print("you win")
         break
     
@@ -241,12 +263,12 @@ while player_hits < total_ship_hp and ai_hits < total_ship_hp:
         elif result == "alr_shot":
             print("ALREADY SHOT THERE")
 
-    if ai_hits >= total_ship_hp:
+    if game.player_fleet.all_sunk:
         print("you lose")
         break
 
 with open("file.txt", "w", encoding="utf-8") as f:
-    if player_hits >= total_ship_hp:
+    if game.ai_fleet.all_sunk:
         f.write(f'Player won with {player_hits} hits and {player_shots_fired} total shots')
-    elif ai_hits >= total_ship_hp:
+    elif game.player_fleet.all_sunk:
         f.write(f'AI won with {ai_hits} hits and {ai_shots_fired} total shots')
