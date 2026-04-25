@@ -4,14 +4,15 @@ class Board:
     def __init__(self, size):
         self._size = size
         self._board = [['~'] * size for _ in range(size)]
+        self._ship_map = {}  # (row, col) -> Ship
 
-        @property
-        def size(self):
-            return self._size
+    @property
+    def size(self):
+        return self._size
         
-        @property
-        def board(self):
-            return self._board
+    @property
+    def board(self):
+        return self._board
 
     def display(self):
         # print column labels with correct offset for row numbers
@@ -36,19 +37,31 @@ class Board:
             if row + ship.size > self._size:
                 return False
             ship_cells = [(row + i, col) for i in range(ship.size)]
-        #check adjacent and ship cells
+        # check adjacent and ship cells
         for r, c in ship_cells:
             for dr in (-1, 0, 1):
                 for dc in (-1, 0, 1):
                     nr = r + dr
-                    nc =  c + dc
+                    nc = c + dc
                     if 0 <= nr < self._size and 0 <= nc < self._size:
                         if self._board[nr][nc] != '~':
                             return False
-        #place ship
+        # place ship and register its cells
         for r, c in ship_cells:
             self._board[r][c] = 'S'
+            ship.register_cell(r, c)
+            self._ship_map[(r, c)] = ship
         return True
+
+    def _mark_adjacent_sunk(self, ship):
+        """After a ship sinks, mark all empty neighbours as misses."""
+        for r, c in ship.cells:
+            for dr in (-1, 0, 1):
+                for dc in (-1, 0, 1):
+                    nr, nc = r + dr, c + dc
+                    if 0 <= nr < self._size and 0 <= nc < self._size:
+                        if self._board[nr][nc] == '~':
+                            self._board[nr][nc] = 'O'
 
     def shoot(self, coords):
         letter = coords[0].upper()
@@ -61,6 +74,12 @@ class Board:
             return 'miss'
         elif cell == 'S':
             self._board[row][col] = 'X'
+            ship = self._ship_map.get((row, col))
+            if ship:
+                ship.hit()
+                if ship.is_sunk:
+                    self._mark_adjacent_sunk(ship)
+                    return 'sunk'
             return 'hit'
         else:
             return 'alr_shot'
@@ -90,19 +109,35 @@ class AIBoard(Board):
 class Ship:
     def __init__(self, size):
         self._size = size
+        self._cells = []   # (row, col) pairs occupied by this ship
+        self._hits = 0
 
     @property
     def size(self):
         return self._size
+
+    @property
+    def cells(self):
+        return self._cells
+
+    @property
+    def is_sunk(self):
+        return self._hits >= self._size
+
+    def register_cell(self, r, c):
+        self._cells.append((r, c))
+
+    def hit(self):
+        self._hits += 1
     
 #----GAME SETUP----
 
-s4 = Ship(5)
-s3 = Ship(4)
-s2 = Ship(3)
-s1 = Ship(2)
-s0 = Ship(2)
-ships = [s4, s3, s2, s1, s0]
+SHIP_SIZES = [5, 4, 3, 2, 2]
+
+#Each board gets its own independent ship objects
+player_ships = [Ship(s) for s in SHIP_SIZES]
+ai_ships     = [Ship(s) for s in SHIP_SIZES]
+
 player_board = Board(10)
 ai_board = AIBoard(10)
 
@@ -123,7 +158,7 @@ for i in range(5): #Player ship placement
                 print("Invalid orientation")
             else:
                 break
-        if player_board.place_ship(ships[i], coords, orient) == True:
+        if player_board.place_ship(player_ships[i], coords, orient) == True:
             player_board.display()
             break
         else:
@@ -134,7 +169,7 @@ ai_board.display()
 
 for i in range(5): #AI ship placement(random)
     while True:
-       if ai_board.place_ship_random(ships[i]):
+       if ai_board.place_ship_random(ai_ships[i]):
             break
        
 print("Shooting phase")
@@ -142,7 +177,7 @@ player_shots_fired = 0
 player_hits = 0
 ai_shots_fired = 0
 ai_hits = 0
-total_ship_hp = sum(ship.size for ship in ships)
+total_ship_hp = sum(s for s in SHIP_SIZES)
 
 while player_hits < total_ship_hp and ai_hits < total_ship_hp:
     print("Player turn")
@@ -164,7 +199,11 @@ while player_hits < total_ship_hp and ai_hits < total_ship_hp:
             else:
                 print("invalid coords")
         
-        if result == 'hit':
+        if result == 'sunk':
+            player_shots_fired += 1
+            player_hits += 1
+            print("HIT - SHIP SUNK")
+        elif result == 'hit':
             player_shots_fired += 1
             player_hits += 1
             print("HIT")
@@ -187,7 +226,11 @@ while player_hits < total_ship_hp and ai_hits < total_ship_hp:
         print(f'AI shoots: {ai_coords}')
         player_board.display()
         
-        if result == 'hit':
+        if result == 'sunk':
+            ai_shots_fired += 1
+            ai_hits += 1
+            print("HIT - SHIP SUNK")
+        elif result == 'hit':
             ai_shots_fired += 1
             ai_hits += 1
             print("HIT")
