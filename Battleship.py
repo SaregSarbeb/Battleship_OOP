@@ -1,5 +1,6 @@
 import random
 
+
 class Board:
     def __init__(self, size):
         self._size = size
@@ -9,17 +10,21 @@ class Board:
     @property
     def size(self):
         return self._size
-        
+
     @property
     def board(self):
         return self._board
 
     def display(self):
-        # print column labels with correct offset for row numbers
+        # Print column labels with correct offset for row numbers
         label_width = len(str(self._size))
-        header = ' ' * label_width + ' ' + ' '.join(chr(ord('A') + i) for i in range(self._size))
+        header = (
+            ' ' * label_width
+            + ' '
+            + ' '.join(chr(ord('A') + i) for i in range(self._size))
+        )
         print(header)
-        # print each row with its number on the left, aligned to width
+        # Print each row with its number on the left, aligned to width
         for row_index, row in enumerate(self._board, start=1):
             print(f"{row_index:>{label_width}} {' '.join(row)}")
 
@@ -37,7 +42,7 @@ class Board:
             if row + ship.size > self._size:
                 return False
             ship_cells = [(row + i, col) for i in range(ship.size)]
-        # check adjacent and ship cells
+        # Check adjacent and ship cells
         for r, c in ship_cells:
             for dr in (-1, 0, 1):
                 for dc in (-1, 0, 1):
@@ -46,7 +51,7 @@ class Board:
                     if 0 <= nr < self._size and 0 <= nc < self._size:
                         if self._board[nr][nc] != '~':
                             return False
-        # place ship and register its cells
+        # Place ship and register its cells
         for r, c in ship_cells:
             self._board[r][c] = 'S'
             ship.register_cell(r, c)
@@ -54,7 +59,7 @@ class Board:
         return True
 
     def _mark_adjacent_sunk(self, ship):
-        #After a ship sinks, mark all empty neighbours as misses
+        # After a ship sinks, mark all empty neighbours as misses
         for r, c in ship.cells:
             for dr in (-1, 0, 1):
                 for dc in (-1, 0, 1):
@@ -83,7 +88,8 @@ class Board:
             return 'hit'
         else:
             return 'alr_shot'
-        
+
+
 class AIBoard(Board):
     def __init__(self, size):
         super().__init__(size)
@@ -91,7 +97,11 @@ class AIBoard(Board):
     def display(self):
         # Hides ships (shows ~ instead of S)
         label_width = len(str(self._size))
-        header = ' ' * label_width + ' ' + ' '.join(chr(ord('A') + i) for i in range(self._size))
+        header = (
+            ' ' * label_width
+            + ' '
+            + ' '.join(chr(ord('A') + i) for i in range(self._size))
+        )
         print(header)
         for row_index, row in enumerate(self._board, start=1):
             hidden_row = ['~' if cell == 'S' else cell for cell in row]
@@ -106,10 +116,11 @@ class AIBoard(Board):
             if self.place_ship(ship, coords, orien):
                 return True
 
+
 class Ship:
     def __init__(self, size):
         self._size = size
-        self._cells = []   # (row, col) pairs occupied by this ship
+        self._cells = []  # (row, col) pairs occupied by this ship
         self._hits = 0
 
     @property
@@ -130,6 +141,7 @@ class Ship:
     def hit(self):
         self._hits += 1
 
+
 class Fleet:
     def __init__(self, sizes):
         self._ships = [Ship(s) for s in sizes]
@@ -146,29 +158,36 @@ class Fleet:
     def all_sunk(self):
         return all(s.is_sunk for s in self._ships)
 
+
 class Game:
     def __init__(self, player_board, ai_board, player_fleet, ai_fleet):
-        self.player_board = player_board   # Boards exist outside Game — aggregation
-        self.ai_board     = ai_board
-        self.player_fleet = player_fleet   # Fleets exist outside Game — aggregation
-        self.ai_fleet     = ai_fleet
+        self.player_board = player_board
+        self.ai_board = ai_board
+        self.player_fleet = player_fleet
+        self.ai_fleet = ai_fleet
 
-#----GAME SETUP----
+
+# ---- GAME SETUP ----
 
 SHIP_SIZES = [5, 4, 3, 2, 2]
 
 # Each fleet composes its own independent Ship objects
 player_fleet = Fleet(SHIP_SIZES)
-ai_fleet     = Fleet(SHIP_SIZES)
+ai_fleet = Fleet(SHIP_SIZES)
 player_board = Board(10)
-ai_board     = AIBoard(10)
+ai_board = AIBoard(10)
 game = Game(player_board, ai_board, player_fleet, ai_fleet)
 
-for i in range(5): #Player ship placement
+# Player ship placement
+for i in range(len(SHIP_SIZES)):
     while True:
         while True:
             coords = input("Input coordinates(A1-J10):")
-            if len(coords) >= 2 and coords[0].isalpha() and coords[1:].isdigit():
+            if (
+                len(coords) >= 2
+                and coords[0].isalpha()
+                and coords[1:].isdigit()
+            ):
                 col = ord(coords[0].upper()) - ord('A')
                 row = int(coords[1:])
                 if 0 <= col < 10 and 1 <= row <= 10:
@@ -181,20 +200,24 @@ for i in range(5): #Player ship placement
                 print("Invalid orientation")
             else:
                 break
-        if player_board.place_ship(game.player_fleet.ships[i], coords, orient) == True:
+        if player_board.place_ship(game.player_fleet.ships[i], coords, orient):
             player_board.display()
             break
         else:
-            print("Cannot place ship there - occupied, too close to another ship or out of bounds")
+            print(
+                "Cannot place ship there - occupied, "
+                "too close to another ship or out of bounds"
+            )
 
 player_board.display()
 ai_board.display()
 
-for i in range(5): #AI ship placement(random)
+# AI ship placement (random)
+for i in range(len(SHIP_SIZES)):
     while True:
-       if ai_board.place_ship_random(game.ai_fleet.ships[i]):
+        if ai_board.place_ship_random(game.ai_fleet.ships[i]):
             break
-       
+
 print("Shooting phase")
 player_shots_fired = 0
 player_hits = 0
@@ -212,7 +235,11 @@ while not game.player_fleet.all_sunk and not game.ai_fleet.all_sunk:
         print(f'Player hits: {player_hits}')
         while True:
             coords = input("Enter coordinates to shoot(A1-J10): ")
-            if len(coords) >= 2 and coords[0].isalpha() and coords[1:].isdigit():
+            if (
+                len(coords) >= 2
+                and coords[0].isalpha()
+                and coords[1:].isdigit()
+            ):
                 col = ord(coords[0].upper()) - ord('A')
                 row = int(coords[1:])
                 if 0 <= col < 10 and 1 <= row <= 10:
@@ -220,7 +247,7 @@ while not game.player_fleet.all_sunk and not game.ai_fleet.all_sunk:
                     break
             else:
                 print("invalid coords")
-        
+
         if result == 'sunk':
             player_shots_fired += 1
             player_hits += 1
@@ -239,15 +266,17 @@ while not game.player_fleet.all_sunk and not game.ai_fleet.all_sunk:
     if game.ai_fleet.all_sunk:
         print("you win")
         break
-    
+
     print("AI turn")
     ai_turn = True
     while ai_turn:
-        ai_coords = chr(ord('A') + random.randint(0, 9)) + str(random.randint(1, 10))
+        ai_coords = (
+            chr(ord('A') + random.randint(0, 9)) + str(random.randint(1, 10))
+        )
         result = player_board.shoot(ai_coords)
         print(f'AI shoots: {ai_coords}')
         player_board.display()
-        
+
         if result == 'sunk':
             ai_shots_fired += 1
             ai_hits += 1
@@ -269,6 +298,12 @@ while not game.player_fleet.all_sunk and not game.ai_fleet.all_sunk:
 
 with open("file.txt", "w", encoding="utf-8") as f:
     if game.ai_fleet.all_sunk:
-        f.write(f'Player won with {player_hits} hits and {player_shots_fired} total shots')
+        f.write(
+            f'Player won with {player_hits} hits '
+            f'and {player_shots_fired} total shots'
+        )
     elif game.player_fleet.all_sunk:
-        f.write(f'AI won with {ai_hits} hits and {ai_shots_fired} total shots')
+        f.write(
+            f'AI won with {ai_hits} hits '
+            f'and {ai_shots_fired} total shots'
+        )
