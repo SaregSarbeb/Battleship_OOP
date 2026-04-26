@@ -129,7 +129,7 @@ Abstraction means exposing only the essential interface of an object and hiding 
 
 The caller receives one of four simple string results (hit, sunk, miss, alr_shot). All internal logic, cell updates, ship lookup, sinking detection, and adjacent-cell masking is hidden inside Board.shoot() and Board._mark_adjacent_sunk().
 
-The leading underscore signals that `_mark_adjacent_sunk` is an internal helper; it is never called from outside the class.
+The leading underscore signals that _mark_adjacent_sunk is an internal helper; it is never called from outside the class.
 
 ---
 
@@ -155,11 +155,10 @@ Board holds references to Ship objects in _ship_map, but the ships are created o
 
 ```python
 def place_ship(self, ship, coords, orien):
-    ...
-    self._ship_map[(r, c)] = ship  # reference, not ownership
+    self._ship_map[(r, c)] = ship
 ```
 
-Composition – `Game` and its subsystems:
+Composition – Game and its systems:
 
 ```python
 game = Game(player_board, ai_board, player_fleet, ai_fleet)
@@ -171,7 +170,7 @@ Game composes all four core objects into one logical unit representing the full 
 
 ### 2.3 Reading from File and Writing to File
 
-At the end of every game session the result is persisted to `file.txt` using Python's file I/O:
+At the end of every game session the result is persisted to file.txt using Python's file I/O:
 
 ```python
 with open("file.txt", "w", encoding="utf-8") as f:
@@ -204,6 +203,6 @@ This coursework produced a fully playable command-line Battleship game that demo
 
 **Possible Future Updates:**
 
-- **Smarter AI:** Replace random targeting with a hunt/target algorithm that focuses fire around a hit cell.
+- **Smarter AI:** Replace random targeting with algorithm that focuses fire around a hit cell.
 - **Save and load:** Serialise the full board state to JSON or CSV so a game can be paused and resumed.
-- **GUI:** Add a graphical interface using `tkinter` or `pygame`, reusing all existing business logic without changes.
+- **GUI:** Add a graphical interface, reusing all existing logic.
