@@ -104,7 +104,7 @@ AIBoard calls super().__init__(size) to reuse the parent constructor, then adds 
 
 #### Polymorphism
 
-Polymorphism means that different classes can share the same interface but provide different implementations. Here, both Board and AIBoard implement display(), but with different output: Board.display() shows ship positions (`S`), while AIBoard.display() hides them (replaces S with ~), so the player cannot see the AI's fleet.
+Polymorphism means that different classes can share the same interface but provide different implementations. Here, both Board and AIBoard implement display(), but with different output: Board.display() shows ship positions (S), while AIBoard.display() hides them (replaces S with ~), so the player cannot see the AI's fleet.
 
 ```python
 def display(self):
@@ -168,7 +168,7 @@ Game composes all four core objects into one logical unit representing the full 
 
 ---
 
-### 2.3 Reading from File and Writing to File
+### 2.3 Writing to File
 
 At the end of every game session the result is persisted to file.txt using Python's file I/O:
 
@@ -195,7 +195,7 @@ with open("file.txt", "w", encoding="utf-8") as f:
 - The game correctly implements all core Battleship game rules: ship placement with adjacency enforcement, turn-based shooting, hit/miss/sunk detection, and automatic masking of cells around a sunk ship.
 - Implementing the adjacency constraint in place_ship() and _mark_adjacent_sunk() required careful iteration over all eight neighbouring cells, which was a complexity challenge.
 - Separating the AI's board into a dedicated AIBoard subclass kept the display logic clean without modifying the base Board class.
-- The Fleet.all_sunk property provided a concise and reusable end-condition check, avoiding duplicated logic across the game loop.
+- The Fleet.all_sunk property provided and reusable end-condition check, avoiding duplicated logic across the game loop.
 
 ### Conclusions
 
